@@ -31,15 +31,33 @@ export default function AuthScreen() {
         setAlert({ message, type });
     };
 
+    const validarFormulario = () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (!emailRegex.test(email)) {
+            showAlert('Por favor, introduce un correo electrónico válido.', 'error');
+            return false;
+        }
+        
+        if (password.length < 6) {
+            showAlert('La contraseña debe tener al menos 6 caracteres.', 'error');
+            return false;
+        }
+        
+        return true;
+    };
+
     async function handleSignIn() {
         if (!email || !password) {
             showAlert('Por favor, introduce email y contraseña.', 'error');
             return;
         }
 
+
+        if (!validarFormulario()) return; 
+
         setLoading(true);
         try {
-            // USO CORRECTO: iniciarSesion
             await iniciarSesion(email, password);
         } catch (error) {
             showAlert(`Fallo al Iniciar Sesión: ${error.message}`, 'error');
@@ -53,6 +71,8 @@ export default function AuthScreen() {
             showAlert('Por favor, introduce email y contraseña.', 'error');
             return;
         }
+
+        if (!validarFormulario()) return;
 
         setLoading(true);
         try {
