@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
-// La importación está confirmada como correcta, pero si el problema persiste,
-// el error debe estar en el archivo ../api/auth.js (que no has mostrado)
+import { 
+    StyleSheet, View, TextInput, ActivityIndicator, Text, TouchableOpacity,
+    KeyboardAvoidingView, ScrollView, Platform
+} from 'react-native';
 import { iniciarSesion, registrarUsuario } from '../api/auth'; 
 
 const CustomAlert = ({ message, type, onClose }) => {
@@ -53,7 +54,6 @@ export default function AuthScreen() {
             return;
         }
 
-
         if (!validarFormulario()) return; 
 
         setLoading(true);
@@ -76,8 +76,12 @@ export default function AuthScreen() {
 
         setLoading(true);
         try {
-            await registrarUsuario(email, password);
-            showAlert('¡Revisa tu correo electrónico para confirmar tu cuenta!', 'success');
+            const resultado = await registrarUsuario(email, password);
+            if (resultado?.confirmacionPendiente) {
+                showAlert('¡Revisa tu correo electrónico para confirmar tu cuenta!', 'success');
+            } else {
+                showAlert('¡Registro completado con éxito!', 'success');
+            }
         } catch (error) {
             showAlert(`Fallo en el Registro: ${error.message}`, 'error');
         } finally {
@@ -86,71 +90,86 @@ export default function AuthScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <CustomAlert 
-                message={alert.message} 
-                type={alert.type} 
-                onClose={() => setAlert({ message: '', type: '' })}
-            />
-            <View style={styles.header}>
-                <Text style={styles.logoIcon}>♻️</Text> 
-                <Text style={styles.logo}>EcoSpot</Text>
-                <Text style={styles.subtitle}>Tu guía para el reciclaje inteligente.</Text>
-            </View>
-            <View style={styles.card}>
-                <Text style={styles.cardTitle}>Acceso de Usuario</Text>
-                <View style={styles.verticallySpaced}>
-                    <TextInput
-                        style={styles.input}
-                        onChangeText={setEmail}
-                        value={email}
-                        placeholder="Correo Electrónico"
-                        autoCapitalize={'none'}
-                        keyboardType="email-address"
-                        editable={!loading}
-                    />
+
+        <KeyboardAvoidingView 
+            style={styles.keyboardView}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            {/* ScrollView permite hacer scroll si el contenido queda tapado de todas formas */}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <CustomAlert 
+                    message={alert.message} 
+                    type={alert.type} 
+                    onClose={() => setAlert({ message: '', type: '' })}
+                />
+                <View style={styles.header}>
+                    <Text style={styles.logoIcon}>♻️</Text> 
+                    <Text style={styles.logo}>EcoSpot</Text>
+                    <Text style={styles.subtitle}>Tu guía para el reciclaje inteligente.</Text>
                 </View>
-                <View style={styles.verticallySpaced}>
-                    <TextInput
-                        style={styles.input}
-                        onChangeText={setPassword}
-                        value={password}
-                        secureTextEntry={true}
-                        placeholder="Contraseña"
-                        autoCapitalize={'none'}
-                        editable={!loading}
-                    />
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Acceso de Usuario</Text>
+                    <View style={styles.verticallySpaced}>
+                        <TextInput
+                            style={styles.input}
+                            onChangeText={setEmail}
+                            value={email}
+                            placeholder="Correo Electrónico"
+                            autoCapitalize={'none'}
+                            keyboardType="email-address"
+                            editable={!loading}
+                        />
+                    </View>
+                    <View style={styles.verticallySpaced}>
+                        <TextInput
+                            style={styles.input}
+                            onChangeText={setPassword}
+                            value={password}
+                            secureTextEntry={true}
+                            placeholder="Contraseña"
+                            autoCapitalize={'none'}
+                            editable={!loading}
+                        />
+                    </View>
+                    <View style={[styles.buttonGroup, styles.verticallySpaced]}>
+                        <TouchableOpacity
+                            style={[styles.buttonBase, styles.buttonPrimary, styles.button3D]}
+                            onPress={handleSignIn}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="#FFFFFF" />
+                            ) : (
+                                <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.buttonBase, styles.buttonSecondary, styles.button3D]}
+                            onPress={handleSignUp}
+                            disabled={loading}
+                        >
+                            <Text style={styles.buttonTextSecondary}>Registrarse</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-                <View style={[styles.buttonGroup, styles.verticallySpaced]}>
-                    <TouchableOpacity
-                        style={[styles.buttonBase, styles.buttonPrimary, styles.button3D]}
-                        onPress={handleSignIn}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                             <ActivityIndicator color="#FFFFFF" />
-                        ) : (
-                            <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.buttonBase, styles.buttonSecondary, styles.button3D]}
-                        onPress={handleSignUp}
-                        disabled={loading}
-                    >
-                        <Text style={styles.buttonTextSecondary}>Registrarse</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    
+    keyboardView: {
         flex: 1,
-        // FONDO VERDE GARANTIZADO si el componente se renderiza.
-        backgroundColor: '#4CAF50', 
+        backgroundColor: '#4CAF50',
+    },
+
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
         padding: 20,
     },
